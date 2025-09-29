@@ -4,8 +4,12 @@ import { useTheme } from "./ThemeProvider";
 const APPS_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbyKIuM2bEd3mCUsbaLkPgnRLnPrkZIZKpGz7t5W-DX2S-ZfuAA-85lelUnsiaJjaEmI/exec";
 
+// Helper for light/dark mode
+const t = (theme, light, dark) => (theme === "dark" ? dark : light);
+
 export default function Courier() {
   const { theme } = useTheme();
+
   const employee = {
     name: "Asagade Oyewale",
     position: "Senior Courier",
@@ -14,18 +18,15 @@ export default function Courier() {
       phone: "+1 234 567 8901",
       email: "asagade@onefunlogistics.com",
     },
-    bio: `Asagade has over 2 years of experience in last-mile delivery and logistics. He is known for his reliability, attention to detail, and friendly customer service. Asagade ensures every package is delivered safely and on time.`,
-    stats: {
-      deliveries: 150,
-      years: 2,
-      rating: 4.9,
-    },
+    bio: `Asagade has over 2 years of experience in last-mile delivery and logistics. He is known for his reliability, attention to detail, and friendly customer service.`,
+    stats: { deliveries: 150, years: 2, rating: 4.9 },
   };
 
   const [showForm, setShowForm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [userSuccess, setUserSuccess] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -37,18 +38,24 @@ export default function Courier() {
     license: "",
     vehicle: "",
     why: "",
+    idPhoto: null, // file upload field
   });
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value, files } = e.target;
+    setForm({ ...form, [name]: files ? files[0] : value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const params = new URLSearchParams(form).toString();
+    setError("");
 
     try {
+      // For now only send text fields — file upload will be separate
+      const { idPhoto, ...textData } = form;
+      const params = new URLSearchParams(textData).toString();
+
       const response = await fetch(`${APPS_SCRIPT_URL}?${params}`);
       const result = await response.json();
 
@@ -66,90 +73,104 @@ export default function Courier() {
             license: "",
             vehicle: "",
             why: "",
+            idPhoto: null,
           });
           setUserSuccess(false);
           setSubmitted(true);
           setLoading(false);
-        }, 2500);
+        }, 2000);
       } else {
+        setError("Failed to submit application. Try again.");
         setLoading(false);
-        alert("Failed to submit application. Try again.");
       }
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong. Please try again later.");
       setLoading(false);
-      alert("Failed to submit application. Try again.");
     }
   };
 
   return (
     <div
-      className={`min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center py-8 px-2 sm:px-4 transition-colors duration-300`}
+      className={`min-h-screen flex flex-col items-center justify-center py-8 px-2 sm:px-4 transition-colors duration-300 ${t(
+        theme,
+        "bg-gray-50 text-gray-900",
+        "bg-gray-900 text-white"
+      )}`}
     >
       {/* Header */}
-      <header className="w-full dark:bg-gray-900 py-6 mb-8">
-        <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 dark:text-white text-center tracking-wide">
-          Our Couriers
-        </h1>
+      <header
+        className={`w-full py-6 mb-8 text-center font-bold text-2xl sm:text-4xl ${t(
+          theme,
+          "bg-gray-50 text-gray-900",
+          "bg-gray-800 text-gray-100"
+        )}`}
+      >
+        Our Couriers
       </header>
 
+      {/* Profile or Form */}
       {!showForm ? (
         <>
+          {/* Profile + Image */}
           <div className="flex flex-col lg:flex-row items-stretch gap-6 w-full max-w-5xl">
-            {/* Profile Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 sm:p-8 flex-1 flex flex-col items-center transition-colors duration-300">
+            <div
+              className={`rounded-lg shadow-lg p-6 sm:p-8 flex-1 flex flex-col items-center border ${t(
+                theme,
+                "bg-white border-gray-200",
+                "bg-gray-800 border-gray-700"
+              )}`}
+            >
               <img
                 src={employee.photo}
                 alt={employee.name}
                 className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-blue-500 mb-4"
               />
-              <h2 className="text-xl sm:text-2xl font-bold text-blue-700 dark:text-blue-400">
+              <h2 className={`text-xl sm:text-2xl font-bold ${t(theme, "text-blue-700", "text-blue-400")}`}>
                 {employee.name}
               </h2>
-              <p className="text-gray-600 dark:text-gray-300">{employee.position}</p>
+              <p className={t(theme, "text-gray-600", "text-gray-300")}>{employee.position}</p>
 
               {/* Contact */}
-              <div className="mt-4 sm:mt-6 w-full">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
+              <div className="mt-6 w-full">
+                <h3 className={`font-semibold mb-2 ${t(theme, "text-gray-800", "text-gray-200")}`}>
                   Contact
                 </h3>
-                <p className="text-gray-700 dark:text-gray-300 text-sm sm:text-base">
+                <p className={t(theme, "text-gray-700", "text-gray-300")}>
                   <span className="font-medium">Phone:</span> {employee.contact.phone}
                 </p>
-                <p className="text-gray-700 dark:text-gray-300 text-sm sm:text-base">
+                <p className={t(theme, "text-gray-700", "text-gray-300")}>
                   <span className="font-medium">Email:</span> {employee.contact.email}
                 </p>
               </div>
 
               {/* About */}
-              <div className="mt-4 sm:mt-6 w-full">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
+              <div className="mt-6 w-full">
+                <h3 className={`font-semibold mb-2 ${t(theme, "text-gray-800", "text-gray-200")}`}>
                   About
                 </h3>
-                <p className="text-gray-700 dark:text-gray-300 text-sm sm:text-base">{employee.bio}</p>
+                <p className={t(theme, "text-gray-700", "text-gray-300")}>{employee.bio}</p>
               </div>
 
               {/* Stats */}
-              <div className="mt-4 sm:mt-6 flex justify-between text-center w-full max-w-xs">
-                {["deliveries", "years", "rating"].map((key, idx) => (
-                  <div key={idx}>
-                    <div className="text-lg sm:text-xl font-bold text-blue-600 dark:text-blue-400">
-                      {employee.stats[key]}{key === "rating" ? "★" : ""}
+              <div className="mt-6 flex justify-between text-center w-full max-w-xs">
+                {Object.entries(employee.stats).map(([key, value]) => (
+                  <div key={key}>
+                    <div className={`text-lg font-bold ${t(theme, "text-blue-600", "text-blue-400")}`}>
+                      {value}
+                      {key === "rating" ? "★" : ""}
                     </div>
-                    <div className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm capitalize">
-                      {key}
-                    </div>
+                    <div className={t(theme, "text-gray-500", "text-gray-400")}>{key}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Image Section */}
             <div className="flex-1 flex justify-center items-center rounded-lg shadow-lg overflow-hidden">
               <img
                 src="./assets/employee.png"
                 alt="Courier at work"
-                className="w-full sm:w-64 md:w-80 lg:w-full h-auto object-cover rounded-lg transition-colors duration-300"
+                className="w-full sm:w-64 md:w-80 lg:w-full h-auto object-cover rounded-lg"
               />
             </div>
           </div>
@@ -157,7 +178,7 @@ export default function Courier() {
           {/* Apply Button */}
           <div className="w-full max-w-5xl flex justify-center mt-8 px-2">
             <button
-              className="w-full sm:w-1/2 md:w-1/3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition"
+              className="w-full sm:w-1/2 md:w-1/3 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition"
               onClick={() => setShowForm(true)}
             >
               Apply to be a Courier
@@ -165,13 +186,20 @@ export default function Courier() {
           </div>
         </>
       ) : submitted ? (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 sm:p-8 max-w-md w-full text-center transition-colors duration-300">
+        // Success screen
+        <div
+          className={`rounded-lg shadow-lg p-6 sm:p-8 max-w-md w-full text-center border ${t(
+            theme,
+            "bg-white border-gray-200",
+            "bg-gray-800 border-gray-700"
+          )}`}
+        >
           <h2 className="text-2xl font-bold text-green-600 mb-4">Application Submitted!</h2>
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
-            Thank you for applying to be a courier with OneFun Logistics. We will review your application and contact you soon.
+          <p className={t(theme, "text-gray-700", "text-gray-300")}>
+            Thank you for applying. We will review your application and contact you soon.
           </p>
           <button
-            className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white py-2 px-6 rounded-lg font-semibold transition"
+            className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg font-semibold transition mt-4"
             onClick={() => {
               setShowForm(false);
               setSubmitted(false);
@@ -181,79 +209,216 @@ export default function Courier() {
           </button>
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 sm:p-8 max-w-md w-full transition-colors duration-300">
-          <h2 className="text-2xl font-bold text-blue-700 dark:text-blue-400 mb-4 text-center">
+        // Application Form
+        <div
+          className={`rounded-lg shadow-lg p-6 sm:p-8 max-w-md w-full border ${t(
+            theme,
+            "bg-white border-gray-200",
+            "bg-gray-800 border-gray-700"
+          )}`}
+        >
+          <h2 className={`text-2xl font-bold mb-4 text-center ${t(theme, "text-blue-700", "text-blue-400")}`}>
             Courier Application Form
           </h2>
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            {Object.entries(form).map(([key, value]) => (
-              <div key={key}>
-                <label className="block text-gray-700 dark:text-gray-200 font-medium mb-1 capitalize">
-                  {key.replace(/([A-Z])/g, " $1")}
-                </label>
-                {key === "why" ? (
-                  <textarea
-                    name={key}
-                    value={value}
-                    onChange={handleChange}
-                    className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:text-white"
-                    rows={3}
-                    required
-                  />
-                ) : key === "gender" || key === "experience" || key === "license" || key === "vehicle" ? (
-                  <select
-                    name={key}
-                    value={value}
-                    onChange={handleChange}
-                    className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:text-white"
-                    required
-                  >
-                    <option value="">Select</option>
-                    {key === "gender" && (
-                      <>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                        <option value="other">Other</option>
-                      </>
-                    )}
-                    {key === "experience" && (
-                      <>
-                        <option value="yes">Yes</option>
-                        <option value="no">No</option>
-                      </>
-                    )}
-                    {key === "license" && (
-                      <>
-                        <option value="yes">Yes</option>
-                        <option value="no">No</option>
-                      </>
-                    )}
-                    {key === "vehicle" && (
-                      <>
-                        <option value="car">Car</option>
-                        <option value="bike">Bike</option>
-                        <option value="van">Van</option>
-                        <option value="none">None</option>
-                      </>
-                    )}
-                  </select>
-                ) : (
-                  <input
-                    type={key === "email" ? "email" : key === "phone" ? "tel" : key === "dob" ? "date" : "text"}
-                    name={key}
-                    value={value}
-                    onChange={handleChange}
-                    className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:text-white"
-                    required={["name", "email", "phone", "experience", "license", "vehicle", "why"].includes(key)}
-                  />
-                )}
-              </div>
-            ))}
+          <form className="space-y-4" onSubmit={handleSubmit} autoComplete="on">
+            {/* Personal Info */}
+            <div>
+              <label className="block font-medium mb-1">Full Name</label>
+              <input
+                type="text"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                autoComplete="name"
+                required
+                className={`w-full rounded px-3 py-2 border ${t(
+                  theme,
+                  "bg-white border-gray-300 text-gray-900",
+                  "bg-gray-700 border-gray-600 text-gray-200"
+                )}`}
+              />
+            </div>
 
+            <div>
+              <label className="block font-medium mb-1">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                autoComplete="email"
+                required
+                className={`w-full rounded px-3 py-2 border ${t(
+                  theme,
+                  "bg-white border-gray-300 text-gray-900",
+                  "bg-gray-700 border-gray-600 text-gray-200"
+                )}`}
+              />
+            </div>
+
+            <div>
+              <label className="block font-medium mb-1">Phone</label>
+              <input
+                type="tel"
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+                autoComplete="tel"
+                required
+                className={`w-full rounded px-3 py-2 border ${t(
+                  theme,
+                  "bg-white border-gray-300 text-gray-900",
+                  "bg-gray-700 border-gray-600 text-gray-200"
+                )}`}
+              />
+            </div>
+
+            <div>
+              <label className="block font-medium mb-1">Address</label>
+              <input
+                type="text"
+                name="address"
+                value={form.address}
+                onChange={handleChange}
+                autoComplete="street-address"
+                className={`w-full rounded px-3 py-2 border ${t(
+                  theme,
+                  "bg-white border-gray-300 text-gray-900",
+                  "bg-gray-700 border-gray-600 text-gray-200"
+                )}`}
+              />
+            </div>
+
+            <div>
+              <label className="block font-medium mb-1">Date of Birth</label>
+              <input
+                type="date"
+                name="dob"
+                value={form.dob}
+                onChange={handleChange}
+                autoComplete="bday"
+                className={`w-full rounded px-3 py-2 border ${t(
+                  theme,
+                  "bg-white border-gray-300 text-gray-900",
+                  "bg-gray-700 border-gray-600 text-gray-200"
+                )}`}
+              />
+            </div>
+
+            {/* Selects */}
+            <div>
+              <label className="block font-medium mb-1">Gender</label>
+              <select
+                name="gender"
+                value={form.gender}
+                onChange={handleChange}
+                required
+                className={`w-full rounded px-3 py-2 border ${t(
+                  theme,
+                  "bg-white border-gray-300 text-gray-900",
+                  "bg-gray-700 border-gray-600 text-gray-200"
+                )}`}
+              >
+                <option value="">Select gender</option>
+                <option>Male</option>
+                <option>Female</option>
+                <option>Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-medium mb-1">Experience</label>
+              <select
+                name="experience"
+                value={form.experience}
+                onChange={handleChange}
+                required
+                className={`w-full rounded px-3 py-2 border ${t(
+                  theme,
+                  "bg-white border-gray-300 text-gray-900",
+                  "bg-gray-700 border-gray-600 text-gray-200"
+                )}`}
+              >
+                <option value="">Do you have courier experience?</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-medium mb-1">Driver’s License</label>
+              <select
+                name="license"
+                value={form.license}
+                onChange={handleChange}
+                required
+                className={`w-full rounded px-3 py-2 border ${t(
+                  theme,
+                  "bg-white border-gray-300 text-gray-900",
+                  "bg-gray-700 border-gray-600 text-gray-200"
+                )}`}
+              >
+                <option value="">Do you have a license?</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-medium mb-1">Vehicle</label>
+              <select
+                name="vehicle"
+                value={form.vehicle}
+                onChange={handleChange}
+                required
+                className={`w-full rounded px-3 py-2 border ${t(
+                  theme,
+                  "bg-white border-gray-300 text-gray-900",
+                  "bg-gray-700 border-gray-600 text-gray-200"
+                )}`}
+              >
+                <option value="">Select vehicle</option>
+                <option>Car</option>
+                <option>Bike</option>
+                <option>Van</option>
+                <option>None</option>
+              </select>
+            </div>
+
+            {/* File Upload */}
+            <div>
+              <label className="block font-medium mb-1">Upload ID / License</label>
+              <input
+                type="file"
+                name="idPhoto"
+                accept="image/*"
+                onChange={handleChange}
+                className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
+            </div>
+
+            {/* Why */}
+            <div>
+              <label className="block font-medium mb-1">Why do you want to join?</label>
+              <textarea
+                name="why"
+                value={form.why}
+                onChange={handleChange}
+                rows={3}
+                required
+                className={`w-full rounded px-3 py-2 border ${t(
+                  theme,
+                  "bg-white border-gray-300 text-gray-900",
+                  "bg-gray-700 border-gray-600 text-gray-200"
+                )}`}
+              />
+            </div>
+
+            {/* Submit */}
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition flex items-center justify-center"
               disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition flex items-center justify-center"
             >
               {loading ? (
                 <span className="flex items-center">
@@ -284,13 +449,17 @@ export default function Courier() {
               )}
             </button>
 
-            {userSuccess && (
-              <p className="mt-2 text-green-600 font-medium">Application submitted successfully!</p>
-            )}
+            {userSuccess && <p className="mt-2 text-green-600 font-medium">Application submitted!</p>}
+            {error && <p className="mt-2 text-red-600 font-medium">{error}</p>}
           </form>
+
           <button
             type="button"
-            className="w-full mt-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 py-2 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-500 transition"
+            className={`w-full mt-2 py-2 rounded-lg font-semibold transition ${t(
+              theme,
+              "bg-gray-200 text-gray-700 hover:bg-gray-300",
+              "bg-gray-700 text-gray-200 hover:bg-gray-600"
+            )}`}
             onClick={() => setShowForm(false)}
           >
             Cancel
