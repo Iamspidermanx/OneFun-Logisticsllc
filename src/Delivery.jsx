@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTheme } from "./ThemeProvider";
 
-// Apps Script URL for user form submission
 const APPS_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbwtw2916vPE3bkndjVxWJHrXsF8D46MQZQQEANLVXGKJ-qxKuhCbg8rXkjsNR9trXy0/exec";
 
@@ -15,13 +14,45 @@ export default function Delivery() {
   const [userSuccess, setUserSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [trackingId, setTrackingId] = useState("");
+  const [showSummary, setShowSummary] = useState(false);
 
   const { theme } = useTheme();
+
+  // Load draft from localStorage
+  useEffect(() => {
+    const draft = JSON.parse(localStorage.getItem("deliveryDraft"));
+    if (draft) {
+      setFullName(draft.fullName || "");
+      setEmail(draft.email || "");
+      setAddress(draft.address || "");
+      setDropoff(draft.dropoff || "");
+      setPhone(draft.phone || "");
+      setDescription(draft.description || "");
+    }
+  }, []);
+
+  // Save draft
+  useEffect(() => {
+    localStorage.setItem(
+      "deliveryDraft",
+      JSON.stringify({
+        fullName,
+        email,
+        address,
+        dropoff,
+        phone,
+        description,
+      })
+    );
+  }, [fullName, email, address, dropoff, phone, description,]);
 
   // User form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setShowSummary(true); // Show modal before final submission
+  };
 
+  const confirmSubmit = async () => {
     const params = new URLSearchParams({
       action: "createOrder",
       fullName,
@@ -38,13 +69,11 @@ export default function Delivery() {
       const response = await fetch(`${APPS_SCRIPT_URL}?${params.toString()}`);
       const result = await response.json();
 
-      console.log("Response:", result);
-
       if (result.status === "success") {
         setTrackingId(result.trackingId || "");
         setUserSuccess(true);
 
-        // Reset form after showing success
+        // Reset form
         setTimeout(() => {
           setFullName("");
           setEmail("");
@@ -52,6 +81,7 @@ export default function Delivery() {
           setDropoff("");
           setPhone("");
           setDescription("");
+          localStorage.removeItem("deliveryDraft");
           setLoading(false);
         }, 3000);
       } else {
@@ -63,6 +93,7 @@ export default function Delivery() {
       console.error("Error submitting order:", error);
       alert("Failed to submit order. Try again.");
     }
+    setShowSummary(false);
   };
 
   return (
@@ -93,6 +124,7 @@ export default function Delivery() {
           className="grid grid-cols-1 md:grid-cols-2 gap-4"
           onSubmit={handleSubmit}
         >
+          {/* Inputs with same styling */}
           <input
             type="text"
             placeholder="Full Name"
@@ -147,6 +179,7 @@ export default function Delivery() {
             `}
             value={dropoff}
             onChange={(e) => setDropoff(e.target.value)}
+            required
           />
           <input
             type="tel"
@@ -162,13 +195,14 @@ export default function Delivery() {
             onChange={(e) => setPhone(e.target.value)}
             required
           />
+
           <textarea
-            rows={5}
+            rows={6}
             placeholder="Package Description"
             className={`w-full p-4 border rounded-xl md:col-span-2 focus:ring-2 transition-colors duration-300
               ${
                 theme === "dark"
-                  ? "bg-gray-700 border-gray-600 text-black focus:ring-indigo-500"
+                  ? "bg-gray-700 border-gray-600 text-white focus:ring-indigo-500"
                   : "bg-white border-gray-300 text-black focus:ring-blue-300"
               }
             `}
@@ -189,33 +223,7 @@ export default function Delivery() {
               `}
               disabled={loading}
             >
-              {loading ? (
-                <span className="flex items-center">
-                  <svg
-                    className="animate-spin h-5 w-5 mr-2 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v8z"
-                    ></path>
-                  </svg>
-                  Submitting...
-                </span>
-              ) : (
-                "Submit"
-              )}
+              {loading ? "Submitting..." : "Submit"}
             </button>
 
             {userSuccess && (
@@ -249,7 +257,71 @@ export default function Delivery() {
             )}
           </div>
         </form>
+
+        {/* Call Us Section */}
+        <div className="mt-10 text-center">
+          <p className="font-semibold">📞 Call us for inquiries:</p>
+          <a
+            href="tel:+1234567890"
+            className="block mt-2 text-blue-600 hover:underline"
+          >
+            +1 234 567 890
+          </a>
+          <a
+            href="mailto:onefunlogistics@myfunllc.com"
+            className="block mt-1 text-blue-600 hover:underline"
+          >
+            onefunlogistics@myfunllc.com
+          </a>
+        </div>
       </div>
+
+      {/* WhatsApp Floating Button */}
+      <a
+        href="https://wa.me/1234567890"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-5 left-5 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg transition"
+      >
+        <i className="pi pi-whatsapp p-1"></i>
+      </a>
+
+      {/* Order Summary Modal */}
+      {showSummary && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div
+            className={`max-w-lg w-full p-6 rounded-2xl shadow-lg ${
+              theme === "dark"
+                ? "bg-gray-800 text-white"
+                : "bg-white text-gray-900"
+            }`}
+          >
+            <h2 className="text-xl font-bold mb-4">Confirm Your Order</h2>
+            <ul className="mb-4 space-y-2 text-sm">
+              <li><strong>Name:</strong> {fullName}</li>
+              <li><strong>Email:</strong> {email}</li>
+              <li><strong>Pickup:</strong> {address}</li>
+              <li><strong>Dropoff:</strong> {dropoff}</li>
+              <li><strong>Phone:</strong> {phone}</li>
+              <li><strong>Description:</strong> {description}</li>
+            </ul>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowSummary(false)}
+                className="px-4 py-2 rounded-full bg-gray-300 hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSubmit}
+                className="px-4 py-2 rounded-full bg-green-600 text-white hover:bg-green-700"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

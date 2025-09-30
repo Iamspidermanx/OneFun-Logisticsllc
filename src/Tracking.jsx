@@ -263,16 +263,19 @@ export default function TrackingPage() {
         {orderData && !loading && (
           <div className="space-y-3 sm:space-y-4 text-sm sm:text-base">
             {Object.entries({
-              "Tracking ID": orderData["Tracking Number"],
-              Name: orderData["Full Name"],
-              Email: orderData.Email,
-              Phone: orderData.Phone,
-              "Pickup Address": orderData.Address,
-              "Dropoff Address": orderData.Dropoff,
-              "Package Description": orderData["Package Description"],
-              Status: orderData.Orderstatus || "Pending",
-              "Last Updated": orderData.Timestamp,
-            }).map(([key, value]) => (
+  "Tracking ID": orderData["Tracking Number"],
+  Name: orderData["Full Name"],
+  Email: orderData.Email,
+  Phone: orderData.Phone,
+  "Pickup Address": orderData.Address,
+  "Dropoff Address": orderData.Dropoff,
+  "Package Description": orderData["Package Description"],
+  Status: orderData.Orderstatus || "Pending",
+  "Delivery Date": orderData["Delivery Date"] || "—",
+  "Delivery Time": orderData["Delivery Time"] || "—",
+  "Last Updated": orderData.Timestamp,
+}).map(([key, value]) => (
+
               <div
                 key={key}
                 className="flex flex-col sm:flex-row justify-between items-start sm:items-center"

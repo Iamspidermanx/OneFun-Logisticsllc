@@ -111,7 +111,7 @@ function App() {
             : "w-full md:w-auto md:px-8 mt-8 md:mt-0"
         }`}
       >
-        <h1 className="text-3xl mt-30 sm:text-4xl md:text-5xl font-bold mb-4">
+        <h1 className="text-3xl mt-20 sm:text-4xl md:text-5xl font-bold mb-4">
           Welcome to OneFun Logistics
         </h1>
         <p
@@ -122,7 +122,7 @@ function App() {
           {firstHalf}
           {showFull && secondHalf}
         </p>
-        <div className="flex gap-4 mt-6 mb-20">
+        <div className="flex gap-4 mt-6 mb-10">
           {!showFull ? (
             <button
               className="text-white bg-blue-500 p-3 px-5 rounded-full"
