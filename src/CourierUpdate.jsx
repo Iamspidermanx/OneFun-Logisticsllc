@@ -25,10 +25,12 @@ export default function CourierUpdate() {
       async (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
+        const accuracy = pos.coords.accuracy; // ✅ precision in meters
 
         try {
-          // Replace with your Apps Script web app URL
-          const url = new URL("https://script.google.com/macros/s/AKfycbwtw2916vPE3bkndjVxWJHrXsF8D46MQZQQEANLVXGKJ-qxKuhCbg8rXkjsNR9trXy0/exec");
+          const url = new URL(
+            "https://script.google.com/macros/s/AKfycbwtw2916vPE3bkndjVxWJHrXsF8D46MQZQQEANLVXGKJ-qxKuhCbg8rXkjsNR9trXy0/exec"
+          );
           url.searchParams.append("action", "updateOrder");
           url.searchParams.append("trackingId", trackingId);
           url.searchParams.append("status", status);
@@ -45,7 +47,11 @@ export default function CourierUpdate() {
           const data = await res.json();
 
           if (data.status === "updated") {
-            setMessage("✅ Location & status updated successfully!");
+            setMessage(
+              `✅ Location & status updated successfully! (±${Math.round(
+                accuracy
+              )}m)`
+            );
           } else if (data.status === "not_found") {
             setMessage("⚠️ Tracking ID not found");
           } else {
@@ -62,6 +68,11 @@ export default function CourierUpdate() {
         console.error(err);
         setMessage("❌ Failed to get location");
         setLoading(false);
+      },
+      {
+        enableHighAccuracy: true, // ✅ ask device for GPS
+        timeout: 10000,           // wait max 10s
+        maximumAge: 0             // don’t reuse cached location
       }
     );
   };
@@ -79,9 +90,7 @@ export default function CourierUpdate() {
           theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-black"
         }`}
       >
-        <h1 className="text-3xl font-bold text-center mb-6">
-          🚚 Courier Update
-        </h1>
+        <h1 className="text-3xl font-bold text-center mb-6">🚚 Courier Update</h1>
 
         <input
           type="text"
